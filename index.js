@@ -1,5 +1,9 @@
 global.__rootdir = __dirname;
 
+const path = require("path");
+const fs = require("fs");
+const dataDir = path.resolve(__dirname, "data");
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const autoprefixer = require('express-autoprefixer');
@@ -21,12 +25,17 @@ app.use(express.static(staticPath));
 
 app.get("/class/:name/:period", (req, res) => {
   const {name, period} = req.params;
+  const dataPath = path.join(dataDir, name, period);
 
+  if(!name.match(/^[a-z]+$/i) || !period.match(/^[0-9]+$/i)) return res.status(400).end();
+
+  
+  
   res.render("index", {
     title: `${name} #${period}`
   });
 });
 
-app.use((req, res) => res.redirect("/class/rhalfs/7"))
+app.use((req, res) => res.redirect("/class/rahlfs/7"))
 
 app.listen(PORT, () => console.log(`Started server at port ${PORT}`));

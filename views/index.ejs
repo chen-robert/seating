@@ -1,8 +1,191 @@
 <html>
 <head>
-  <title><%= title %></title>
+<title><%= title %></title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 </head>
-<body>
+<div>
+  <table>
+    <tbody id="main">
+    
+    </tbody>
+  </table>
+</div>
+<style>
+body {
+  margin: 0;
+  padding: 25px;
+  
+  overflow: hidden;
+}
 
-</body>
-</html>
+td {
+  width: 100px;
+  height: 100px;
+  margin: 0;
+  padding: 0;
+  
+  background-color: white;
+  transition: background-color 100ms;
+  
+  display: inline-block;
+  font-size: 25px;  
+}
+
+td.clicked {
+  background-color: #efefef;
+}
+
+td:hover {
+  background-color: #eee;
+  cursor: pointer;
+}
+
+tr {
+  white-space: nowrap;
+  display: inline-block;
+}
+
+table {
+}
+</style>
+<script>
+for(var i = 0; i < 50; i++) {
+  let row = "<tr>";
+  for(var j = 0; j < 50; j++) row += `<td data-coords="${i + "," + j}"><p></p></td>`;
+  row += "</tr>";
+  
+  main.insertAdjacentHTML("beforeend", row);
+}
+
+const grid = [];
+const size = 15;
+for(var i = 0; i < size; i++) grid.push(new Array(size).fill(false));
+
+for(var i = 0; i < 3; i++){
+  for(var j = 0; j < 3; j++){
+    for(var k = 0; k < 2; k++){
+      for(var l = 0; l < 2; l++){
+        if(i == 2 && l == 1) continue;
+        let nxtj = 4 * i + k + 1;
+        let nxti = j + 5 * l;
+        
+        if(i == 2) nxti += 2;
+        
+        $(`td[data-coords="${nxti + "," + nxtj}"]`).toggleClass("clicked");
+        grid[nxti][nxtj] = true;
+      }
+    }
+  }
+}
+
+
+const names = [];
+for(let i = 0; i < 24; i++) names.push("Robert Chen" + i);
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+const relabel = () => {
+  const curr = names.slice();
+  while(curr.length < 30) curr.push("");
+  shuffle(curr);
+  
+  var cnt = 0;
+  for(var i = 0; i < size; i++) {
+    for(var j = 0; j < size; j++) {
+      if(grid[i][j]) {
+        $(`td[data-coords="${i + "," + j}"] p`).html(curr.pop().replace(" ", "<br>"));
+      } else {
+        $(`td[data-coords="${i + "," + j}"] p`).text("");
+      }
+    }
+  }
+  console.log(curr);
+}
+
+
+$(() => {
+  $("td").click(function() {
+    const [x, y] = $(this).data("coords").split(",").map(a => +a);
+    grid[x][y] = !grid[x][y];
+    
+    $(this).toggleClass("clicked");
+    relabel();  
+  });
+});
+
+relabel();
+
+
+
+</script>
+<script>
+
+
+const sizeLim = 6;
+const sizes = [6, 6, 6, 6, 6, 6];
+
+const lp = [1];
+for(const num of sizes) lp.push(lp[lp.length - 1] * num);
+lp.pop();
+
+const assert = condition => {
+  if(!condition) throw "Assertion failed";
+}
+
+const hash = state => {
+  assert(state.length === lp.length);
+
+  let ret = 0;
+  for(var i = 0; i < state.length; i++) {
+    ret += state[i] * lp[i];
+  }
+  return ret;
+}
+
+const constraints = [];
+for(let i = 0; i < names.length; i++){
+  constraints.push(new Array(names.length).fill(0));
+}
+
+const dp = [];
+const base = new Array(sizes.length).fill(0);
+dp[hash(base)] = 0;
+
+const recurse = (sum, fn, curr=[]) => {
+  if(curr.length === sizes.length) return fn(curr);
+  
+  for(let i = (curr.length === sizes.length - 1 ? sum: 0); i <= sum && i < sizeLim; i++) {
+    curr.push(i);
+    recurse(sum - i, fn, curr);
+    curr.pop();
+  }
+}
+
+const get = state => {
+  const key = hash(state);
+  if(dp[key] !== undefined) return dp[key];
+  return -Infinity;
+}
+
+const set = (state, val) => {
+  dp[state] = Math.max(get(state), val);
+}
+
+for(let i = 1; i <= names.length; i++) {
+  recurse(i, state => {
+    for(let j = 0; j < state.length; j++){
+      if(state[j] != 0) {
+        const nxt = state.slice();
+        nxt[j]--;
+        
+        set(state, get(nxt));
+      }
+    }
+  });
+}
+</script>

@@ -9,7 +9,8 @@
     "ejs": "^2.7.1",
     "express": "^4.17.1",
     "express-autoprefixer": "^5.4.0",
-    "less-middleware": "^3.1.0"
+    "less-middleware": "^3.1.0",
+    "lowdb": "^1.0.0"
   },
   "devDependencies": {
     "nodemon": "^1.19.2"

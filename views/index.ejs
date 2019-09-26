@@ -2,46 +2,52 @@
 <head>
   <title><%= title %></title>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
   <link rel="stylesheet" href="/styles/main.css">
 </head>
-<div>
-  <table>
-    <tbody id="main">
-    
-    </tbody>
-  </table>
-</div>
+<body>
+  <div class="main">
+    <section class="sidebar" id="sidebar">
+    </section>
+    <table>
+      <tbody id="main">
+      
+      </tbody>
+    </table>
+  </div>
+</body>
 <script>
-for(var i = 0; i < 50; i++) {
+Math.seedrandom("<%= seed %>");
+
+const grid = <%- JSON.stringify(layout) %>;
+for(var i = 0; i <= grid.length; i++) {
   let row = "<tr>";
-  for(var j = 0; j < 50; j++) row += `<td data-coords="${i + "," + j}"><p></p></td>`;
+  for(var j = 0; j <= grid[0].length; j++) {
+    if(i == 0 || j == 0) {
+      let num = "";
+      if(i != 0) num = i;
+      if(j != 0) num = j;
+      row += `<td class="grid--small">${num}</td>`;
+    } else {
+      row += `<td class="grid--big" data-coords="${(i - 1) + "," + (j - 1)}"><p></p></td>`;
+    }
+
+  }
   row += "</tr>";
   
   main.insertAdjacentHTML("beforeend", row);
 }
 
-const grid = [];
-const size = 15;
-for(var i = 0; i < size; i++) grid.push(new Array(size).fill(false));
+const names = <%- JSON.stringify(names) %>;
+const size = grid.length;
 
-for(var i = 0; i < 3; i++){
-  for(var j = 0; j < 3; j++){
-    for(var k = 0; k < 2; k++){
-      for(var l = 0; l < 2; l++){
-        let nxtj = 4 * i + k + 1;
-        let nxti = j + 5 * l;
-        
-        $(`td[data-coords="${nxti + "," + nxtj}"]`).toggleClass("clicked");
-        grid[nxti][nxtj] = true;
-      }
-    }
-  }
+for(let i = 0; i < grid.length; i++){
+  for(let j = 0; j < grid[i].length; j++){
+    if(grid[i][j]) $(`td[data-coords="${i + "," + j}"]`).toggleClass("clicked");
+  }  
 }
 
-
-const names = <%- JSON.stringify(names) %>;
-
-function shuffle(a) {
+const shuffle = a => {
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
@@ -68,94 +74,34 @@ const relabel = () => {
   }
   shuffle(order)
 
-  order.sort((a, b) => Math.abs(b.x - 3.5) - Math.abs(a.x - 3.5));
+  order.sort((a, b) => Math.abs(b.y - 3.5) - Math.abs(a.y - 3.5));
 
+  const list = [];
   for(const {x, y} of order) {
     if(curr.length === 0) continue;
     
-    $(`td[data-coords="${x + "," + y}"] p`).text(cleanName(curr.pop()));
+    const name = curr.pop();
+    $(`td[data-coords="${x + "," + y}"] p`).text(cleanName(name));
+    list.push({name, x, y});
+  }
+
+  list.sort((a, b) => a.name.localeCompare(b.name));
+
+  $("#sidebar").html("");
+  for(const {name, x, y} of list) {
+    $("#sidebar").append(`
+      <div class="sidebar__row">
+        <div class="sidebar__title">${name}</div>
+        <div class="sidebar__pos">${x + 1},${y + 1}</div>
+      </div>
+    `)
   }
 }
-
-
-$(() => {
-  $("td").click(function() {
-    const [x, y] = $(this).data("coords").split(",").map(a => +a);
-    grid[x][y] = !grid[x][y];
-    
-    $(this).toggleClass("clicked");
-    relabel();  
-  });
-});
 
 relabel();
 
 
 
 </script>
-<script>
-
-
-const sizeLim = 6;
-const sizes = [6, 6, 6, 6, 6, 6];
-
-const lp = [1];
-for(const num of sizes) lp.push(lp[lp.length - 1] * num);
-lp.pop();
-
-const assert = condition => {
-  if(!condition) throw "Assertion failed";
-}
-
-const hash = state => {
-  assert(state.length === lp.length);
-
-  let ret = 0;
-  for(var i = 0; i < state.length; i++) {
-    ret += state[i] * lp[i];
-  }
-  return ret;
-}
-
-const constraints = [];
-for(let i = 0; i < names.length; i++){
-  constraints.push(new Array(names.length).fill(0));
-}
-
-const dp = [];
-const base = new Array(sizes.length).fill(0);
-dp[hash(base)] = 0;
-
-const recurse = (sum, fn, curr=[]) => {
-  if(curr.length === sizes.length) return fn(curr);
-  
-  for(let i = (curr.length === sizes.length - 1 ? sum: 0); i <= sum && i < sizeLim; i++) {
-    curr.push(i);
-    recurse(sum - i, fn, curr);
-    curr.pop();
-  }
-}
-
-const get = state => {
-  const key = hash(state);
-  if(dp[key] !== undefined) return dp[key];
-  return -Infinity;
-}
-
-const set = (state, val) => {
-  dp[state] = Math.max(get(state), val);
-}
-
-for(let i = 1; i <= names.length; i++) {
-  recurse(i, state => {
-    for(let j = 0; j < state.length; j++){
-      if(state[j] != 0) {
-        const nxt = state.slice();
-        nxt[j]--;
-        
-        set(state, get(nxt));
-      }
-    }
-  });
-}
-</script>
+</body>
+</html>

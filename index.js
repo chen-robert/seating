@@ -1,6 +1,11 @@
 global.__rootdir = __dirname;
 
 const path = require("path");
+const FileSync = require('lowdb/adapters/FileSync');
+const db = require("lowdb")(
+  new FileSync(path.resolve(__dirname, "ext", "db.json"))
+);
+
 const fs = require("fs");
 const dataDir = path.resolve(__dirname, "data");
 
@@ -31,13 +36,16 @@ app.get("/class/:name/:period", (req, res) => {
 
   if(!fs.existsSync(dataPath)) return res.status(400).send("Class not found");
 
-  const {names} = require(dataPath);
+  const {names, layout} = require(dataPath);
   
   res.render("index", {
     title: `${name} #${period}`,
-    names
+    names,
+    layout,
+    seed: "hello world"
   });
 });
+
 
 app.use((req, res) => res.redirect("/class/rahlfs/7"))
 

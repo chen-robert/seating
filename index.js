@@ -32,12 +32,19 @@ app.use(lessMiddleware(staticPath));
 app.use(autoprefixer({browsers: ["last 3 versions", "> 1%"], cascade: false}));
 app.use(express.static(staticPath));
 
-app.get("/class/:name/:period", (req, res) => {
+app.use("/class/:name/:period", (req, res, next) => {
   const {name, period} = req.params;
   
   const dataPath = path.join(dataDir, name, period) + ".json";
   if(!name.match(/^[a-z]+$/i) || !period.match(/^[0-9]+$/i)) return res.status(400).end();
   if(!fs.existsSync(dataPath)) return res.status(400).send("Class not found");
+
+  next();
+});
+
+app.get("/class/:name/:period", (req, res) => {
+  const {name, period} = req.params;
+  const dataPath = path.join(dataDir, name, period) + ".json";
 
   const {names, layout} = require(dataPath);
   
@@ -49,13 +56,19 @@ app.get("/class/:name/:period", (req, res) => {
   });
 });
 
+app.get("/class/:name/:period/pref", (req, res) => {
+  const {name, period} = req.params;
+  const dataPath = path.join(dataDir, name, period) + ".json";
+  const {names} = require(dataPath);
+
+  res.render("pref", {
+    names
+  });
+});
+
 app.get("/class/:name/:period/reset", (req, res) => {
   const {name, period} = req.params;
   
-  const dataPath = path.join(dataDir, name, period) + ".json";
-  if(!name.match(/^[a-z]+$/i) || !period.match(/^[0-9]+$/i)) return res.status(400).end();
-  if(!fs.existsSync(dataPath)) return res.status(400).send("Class not found");
-
   const seed = db.get("seeds").value()[name + "-" + period] + 1 || 0;
   db.get("seeds")
     .set(name + "-" + period, seed)

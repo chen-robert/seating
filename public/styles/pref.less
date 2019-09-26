@@ -1,0 +1,46 @@
+body {
+  display: flex;
+  justify-content: center;
+}
+
+.form {
+  width: 500px;
+  text-align: center;
+  
+  label {
+    display: block;
+    width: 100%;
+
+    padding: 10px;
+  }
+
+  & .btn {
+    margin-top: 25px; 
+    background-color: #008cba;
+    border: none;
+    color: white;
+    font-size: 15px;
+    text-align: center;
+    display: inline-block;
+    padding: 15px 32px;
+    cursor: pointer;
+
+    &:hover {
+      background-color: darken(#008cba, 5%);
+    }
+  }
+}
+
+.form__row {
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+
+  & select {
+    width: 100%;
+  }
+}
+
+* {
+  font-family: 'Robot', sans-serif;
+}

@@ -44,16 +44,19 @@ table {
 
 .sidebar {
   flex: 1;
-  padding: 50px;
 
   overflow-y: scroll;
-  height: 90vh;
+  height: 100vh;
 }
 
 .sidebar__row {
+  padding: 10px 50px;
   display: flex;
   justify-content: space-between;
-  margin: 15px 0;
+  
+  &:nth-child(even) {
+    background-color: #eee;
+  }
 }
 
 .sidebar__title {

@@ -25,14 +25,17 @@ app.use(express.static(staticPath));
 
 app.get("/class/:name/:period", (req, res) => {
   const {name, period} = req.params;
-  const dataPath = path.join(dataDir, name, period);
+  const dataPath = path.join(dataDir, name, period) + ".json";
 
   if(!name.match(/^[a-z]+$/i) || !period.match(/^[0-9]+$/i)) return res.status(400).end();
 
-  
+  if(!fs.existsSync(dataPath)) return res.status(400).send("Class not found");
+
+  const {names} = require(dataPath);
   
   res.render("index", {
-    title: `${name} #${period}`
+    title: `${name} #${period}`,
+    names
   });
 });
 

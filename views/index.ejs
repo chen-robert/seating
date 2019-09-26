@@ -1,7 +1,8 @@
 <html>
 <head>
-<title><%= title %></title>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <title><%= title %></title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="/styles/main.css">
 </head>
 <div>
   <table>
@@ -10,44 +11,6 @@
     </tbody>
   </table>
 </div>
-<style>
-body {
-  margin: 0;
-  padding: 25px;
-  
-  overflow: hidden;
-}
-
-td {
-  width: 100px;
-  height: 100px;
-  margin: 0;
-  padding: 0;
-  
-  background-color: white;
-  transition: background-color 100ms;
-  
-  display: inline-block;
-  font-size: 25px;  
-}
-
-td.clicked {
-  background-color: #efefef;
-}
-
-td:hover {
-  background-color: #eee;
-  cursor: pointer;
-}
-
-tr {
-  white-space: nowrap;
-  display: inline-block;
-}
-
-table {
-}
-</style>
 <script>
 for(var i = 0; i < 50; i++) {
   let row = "<tr>";
@@ -65,11 +28,8 @@ for(var i = 0; i < 3; i++){
   for(var j = 0; j < 3; j++){
     for(var k = 0; k < 2; k++){
       for(var l = 0; l < 2; l++){
-        if(i == 2 && l == 1) continue;
         let nxtj = 4 * i + k + 1;
         let nxti = j + 5 * l;
-        
-        if(i == 2) nxti += 2;
         
         $(`td[data-coords="${nxti + "," + nxtj}"]`).toggleClass("clicked");
         grid[nxti][nxtj] = true;
@@ -79,8 +39,7 @@ for(var i = 0; i < 3; i++){
 }
 
 
-const names = [];
-for(let i = 0; i < 24; i++) names.push("Robert Chen" + i);
+const names = <%- JSON.stringify(names) %>;
 
 function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) {
@@ -89,22 +48,33 @@ function shuffle(a) {
   }
   return a;
 }
+
+const cleanName = name => {
+  const parts = name.split(",").map(a => a.trim().charAt(0).toUpperCase());
+  
+  return parts[1] + parts[0]; 
+}
+
 const relabel = () => {
   const curr = names.slice();
-  while(curr.length < 30) curr.push("");
   shuffle(curr);
-  
-  var cnt = 0;
+ 
+  const order = [];
   for(var i = 0; i < size; i++) {
-    for(var j = 0; j < size; j++) {
-      if(grid[i][j]) {
-        $(`td[data-coords="${i + "," + j}"] p`).html(curr.pop().replace(" ", "<br>"));
-      } else {
-        $(`td[data-coords="${i + "," + j}"] p`).text("");
-      }
+    for(var j = 0; j < size; j++) {  
+      if(grid[i][j]) order.push({x: i, y: j});
+      $(`td[data-coords="${i + "," + j}"] p`).text("");
     }
   }
-  console.log(curr);
+  shuffle(order)
+
+  order.sort((a, b) => Math.abs(b.x - 3.5) - Math.abs(a.x - 3.5));
+
+  for(const {x, y} of order) {
+    if(curr.length === 0) continue;
+    
+    $(`td[data-coords="${x + "," + y}"] p`).text(cleanName(curr.pop()));
+  }
 }
 
 

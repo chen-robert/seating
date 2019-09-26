@@ -7,7 +7,7 @@ const db = require("lowdb")(
 );
 db.defaults({
   seeds: {},
-  relations: {}
+  prefs: {}
 }).write();
 
 const fs = require("fs");
@@ -64,6 +64,25 @@ app.get("/class/:name/:period/pref", (req, res) => {
   res.render("pref", {
     names
   });
+});
+
+const cleanName = name => {
+  return name.split(",").join("-").split(" ").join("").toLowerCase();
+}
+
+app.post("/class/:name/:period/pref", (req, res) => {
+  let {name, towards, away} = req.body;
+  towards = towards || [];
+  away = away || [];
+
+  db.get("prefs")
+    .set(req.params.name + "-" + req.params.period + "-" + cleanName(name), {
+      towards,
+      away
+    })
+    .write();
+
+  res.redirect("/class/" + req.params.name + "/" + req.params.period);
 });
 
 app.get("/class/:name/:period/reset", (req, res) => {

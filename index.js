@@ -5,6 +5,10 @@ const FileSync = require('lowdb/adapters/FileSync');
 const db = require("lowdb")(
   new FileSync(path.resolve(__dirname, "ext", "db.json"))
 );
+db.defaults({
+  seeds: {},
+  relations: {}
+}).write();
 
 const fs = require("fs");
 const dataDir = path.resolve(__dirname, "data");
@@ -30,10 +34,9 @@ app.use(express.static(staticPath));
 
 app.get("/class/:name/:period", (req, res) => {
   const {name, period} = req.params;
+  
   const dataPath = path.join(dataDir, name, period) + ".json";
-
   if(!name.match(/^[a-z]+$/i) || !period.match(/^[0-9]+$/i)) return res.status(400).end();
-
   if(!fs.existsSync(dataPath)) return res.status(400).send("Class not found");
 
   const {names, layout} = require(dataPath);
@@ -42,11 +45,24 @@ app.get("/class/:name/:period", (req, res) => {
     title: `${name} #${period}`,
     names,
     layout,
-    seed: "hello world"
+    seed: db.get("seeds").get(name + "-" + period).value() 
   });
 });
 
+app.get("/class/:name/:period/reset", (req, res) => {
+  const {name, period} = req.params;
+  
+  const dataPath = path.join(dataDir, name, period) + ".json";
+  if(!name.match(/^[a-z]+$/i) || !period.match(/^[0-9]+$/i)) return res.status(400).end();
+  if(!fs.existsSync(dataPath)) return res.status(400).send("Class not found");
 
-app.use((req, res) => res.redirect("/class/rahlfs/7"))
+  const seed = db.get("seeds").value()[name + "-" + period] + 1 || 0;
+  db.get("seeds")
+    .set(name + "-" + period, seed)
+    .write();
+
+  res.send("" + seed);
+});
+app.use((req, res) => res.redirect("/class/rahlfs/7"));
 
 app.listen(PORT, () => console.log(`Started server at port ${PORT}`));

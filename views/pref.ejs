@@ -18,16 +18,8 @@
       </select>
     </div>
     <div class="form__row">
-      <label for="towards">Prefer</label>
-      <select class="multi-select" name="towards[]" multiple="multiple">
-        <% names.forEach(name => { %>
-          <option value="<%= name %>"><%= name %></option>
-        <% }) %>
-      </select>
-    </div>
-    <div class="form__row">
-      <label for="towards">Prefer Not</label>
-      <select class="multi-select" name="away[]" multiple="multiple">
+      <label for="towards">Would be a great table partner with me</label>
+      <select class="multi-select" name="towards" multiple="multiple">
         <% names.forEach(name => { %>
           <option value="<%= name %>"><%= name %></option>
         <% }) %>

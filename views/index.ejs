@@ -39,15 +39,6 @@ for(var i = 0; i <= grid.length; i++) {
   main.insertAdjacentHTML("beforeend", row);
 }
 
-const names = <%- JSON.stringify(names) %>;
-const size = grid.length;
-
-for(let i = 0; i < grid.length; i++){
-  for(let j = 0; j < grid[i].length; j++){
-    if(grid[i][j]) $(`td[data-coords="${i + "," + j}"]`).toggleClass("clicked");
-  }  
-}
-
 const shuffle = a => {
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -56,36 +47,25 @@ const shuffle = a => {
   return a;
 }
 
+const names = <%- JSON.stringify(names) %>;
+const prefMap = <%- JSON.stringify(prefMap) %>;
+const size = grid.length;
+
+
+for(let i = 0; i < grid.length; i++){
+  for(let j = 0; j < grid[i].length; j++){
+    if(grid[i][j]) $(`td[data-coords="${i + "," + j}"]`).toggleClass("clicked");
+  }  
+}
+
+
 const cleanName = name => {
   const parts = name.split(",").map(a => a.trim().charAt(0).toUpperCase());
   
   return parts[1] + parts[0]; 
 }
 
-const relabel = () => {
-  const curr = names.slice();
-  shuffle(curr);
- 
-  const order = [];
-  for(var i = 0; i < size; i++) {
-    for(var j = 0; j < size; j++) {  
-      if(grid[i][j]) order.push({x: i, y: j});
-      $(`td[data-coords="${i + "," + j}"] p`).text("");
-    }
-  }
-  shuffle(order)
-
-  order.sort((a, b) => Math.abs(b.y - 3.5) - Math.abs(a.y - 3.5));
-
-  const list = [];
-  for(const {x, y} of order) {
-    if(curr.length === 0) continue;
-    
-    const name = curr.pop();
-    $(`td[data-coords="${x + "," + y}"] p`).text(cleanName(name)).prop("title", name);
-    list.push({name, x, y});
-  }
-
+const displaySidebar = list => {
   list.sort((a, b) => a.name.localeCompare(b.name));
 
   $("#sidebar").html("");
@@ -99,7 +79,65 @@ const relabel = () => {
   }
 }
 
-relabel();
+const permute = (arr, lim, fn, idx=0, base=[]) => {
+  if(base.length === lim) return fn(base.concat());
+
+  for(let i = idx; i < arr.length; i++) {
+    base.push(i);
+    permute(arr, lim, fn, i + 1, base);
+    base.pop();
+  }
+}
+
+const score = (idx, names, debug) => {
+  const group = idx.map(i => names[i]);
+  return group
+    .map(name => {
+      let curr = prefMap[name]
+        .map(name => group.includes(name) ? 1: 0)
+        .reduce((a, b) => a + b, 0);
+
+      if(prefMap[name].length === 0) curr = 1;
+      else curr /= prefMap[name].length;
+
+      if(curr === 0 && debug) console.log(name);
+
+      return curr === 0? -100: curr;
+    })
+    .reduce((a, b) => a + b, 0) + Math.random() - 0.5;
+}
+
+const relabel = () => {
+  let curr = names.slice();
+  shuffle(curr);
+
+  let tot = 0;
+
+  const ret = [];
+  const tables = [5, 5, 5, 5, 5, 6];
+  while(tables.length !== 0) {
+    let bestIdx = null;
+    permute(curr, tables[tables.length - 1], idx => {
+      if(bestIdx === null) bestIdx = idx;
+      else if(score(bestIdx, curr) < score(idx, curr)) bestIdx = idx;
+    });
+   
+    tot += score(bestIdx, curr, true);
+    ret.push(bestIdx.map(i => curr[i]));
+
+    const nxt = [];
+    for(let i = 0; i < curr.length; i++) {
+      if(!bestIdx.includes(i)) nxt.push(curr[i]);
+    }
+    curr = nxt;
+    
+    tables.pop();
+  }
+  console.log(ret);
+  console.log(tot);
+}
+
+for(let i = 0; i < 10; i++)relabel();
 
 
 

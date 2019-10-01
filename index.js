@@ -48,13 +48,31 @@ app.get("/class/:name/:period", (req, res) => {
 
   const {names, layout} = require(dataPath);
   
+  const allPrefs = db.get("prefs").value();
+  const prefMap = {};
+  for(const person of names) {
+    const prefs = allPrefs[getKey(name, period, person)] || {towards: []};
+    if(!(prefs.towards instanceof Array)) prefs.towards = [prefs.towards];
+
+    prefMap[person] = prefs.towards;
+  }
+  
   res.render("index", {
     title: `${name} #${period}`,
     names,
     layout,
+    prefMap,
     seed: db.get("seeds").get(name + "-" + period).value() 
   });
 });
+
+const cleanName = name => {
+  return name.split(",").join("-").split(" ").join("").toLowerCase();
+}
+
+const getKey = (cls, period, name) => {
+  return cls + "-" + period + "-" + cleanName(name);
+}
 
 app.get("/class/:name/:period/pref", (req, res) => {
   const {name, period} = req.params;
@@ -66,23 +84,20 @@ app.get("/class/:name/:period/pref", (req, res) => {
   });
 });
 
-const cleanName = name => {
-  return name.split(",").join("-").split(" ").join("").toLowerCase();
-}
 
 app.post("/class/:name/:period/pref", (req, res) => {
-  let {name, towards, away} = req.body;
+  let {name, towards} = req.body;
   towards = towards || [];
-  away = away || [];
+  if(!(towards instanceof Array)) towards = [towards];
 
   db.get("prefs")
-    .set(req.params.name + "-" + req.params.period + "-" + cleanName(name), {
-      towards,
-      away
+    .set(getKey(req.params.name, req.params.period, name), 
+    {
+      towards
     })
     .write();
 
-  res.redirect("/class/" + req.params.name + "/" + req.params.period);
+  res.send("Preferences saved!");
 });
 
 app.get("/class/:name/:period/reset", (req, res) => {

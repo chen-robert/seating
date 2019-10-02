@@ -113,31 +113,100 @@ const relabel = () => {
 
   let tot = 0;
 
-  const ret = [];
-  const tables = [5, 5, 5, 5, 5, 6];
-  while(tables.length !== 0) {
-    let bestIdx = null;
-    permute(curr, tables[tables.length - 1], idx => {
-      if(bestIdx === null) bestIdx = idx;
-      else if(score(bestIdx, curr) < score(idx, curr)) bestIdx = idx;
-    });
-   
-    tot += score(bestIdx, curr, true);
-    ret.push(bestIdx.map(i => curr[i]));
+  //const valid = [0, 5, 6, 10, 11, 15, 16, 20, 21, 25, 26, 31];
+  const valid = [0, 6, 11, 16, 21, 26, 31];
 
-    const nxt = [];
-    for(let i = 0; i < curr.length; i++) {
-      if(!bestIdx.includes(i)) nxt.push(curr[i]);
-    }
-    curr = nxt;
-    
-    tables.pop();
+  const permMap = {};
+  for(const i of valid) {
+    permMap[i] = {};
+
+    let tmp = [];
+    permute(new Array(i), 5, idx => {
+      tmp.push(idx);
+    });
+    shuffle(tmp)
+    permMap[i][5] = tmp;
+
+    tmp = [];
+    permute(new Array(i), 6, idx => {
+      tmp.push(idx);
+    });
+    shuffle(tmp)
+    permMap[i][6] = tmp;
   }
-  console.log(ret);
-  console.log(tot);
+  console.log(permMap)
+
+
+  const N = names.length;
+  const memo = {};
+  const mapBack = {};
+  const hash = mask => mask.join(",");
+  const dp = mask => {
+    const maskH = hash(mask);
+    if(memo[maskH]) return memo[maskH];
+
+    const opts = [];
+    for(let i = 0; i < N; i++) {
+      if(mask[i]) opts.push(i);
+    }
+    if(opts.length === 0) return 0;
+    
+    let cnt = 0;
+    let best = -100000;
+    const applyPerm = idx => {
+      const delta = score(idx.map(i => opts[i]), curr);
+      if(opts.length >= 15 && delta < 4) return;
+      if(cnt++ > 20) return;
+
+      for(const i of idx) mask[opts[i]] = false;
+
+      const nxt = dp(mask) + delta;
+      if(best < nxt) {
+        best = nxt;
+        mapBack[maskH] = hash(mask);
+      }
+      
+      for(const i of idx) mask[opts[i]] = true;
+    }
+
+    let todo = [];
+    if(valid.includes(opts.length - 5)) {
+      todo = todo.concat(permMap[opts.length][5]);
+    }
+    if(valid.includes(opts.length - 6)) {
+      todo = todo.concat(permMap[opts.length][6]);
+    }
+
+    for(let i = 0; i < todo.length; i++) {
+      applyPerm(todo[i]);
+    }
+
+    memo[maskH] = best;
+    return best;
+  }
+  
+  const mask = names.map(_ => true);
+  console.log(dp(mask));
+
+  const maps = [];
+  let currH = hash(mask);
+  for(let i = 0; i < 6; i++) {
+    maps.push(currH.split(",").map(a => a === "true"));
+    currH = mapBack[currH];
+  }
+  maps.push(currH.split(",").map(a => a === "true"));
+
+  for(let i = 0; i < 6; i++) {
+    const currSet = [];
+    for(let j = 0; j < maps[i].length; j++) {
+      if(maps[i][j] && !maps[i+1][j]) currSet.push(j);
+    }
+    console.log(currSet.map(i => curr[i]));
+    console.log(score(currSet, curr));
+  }
 }
 
-for(let i = 0; i < 10; i++)relabel();
+relabel();
 
 
 

@@ -65,7 +65,7 @@ const cleanName = name => {
   return parts[1] + parts[0]; 
 }
 
-const displaySidebar = list => {
+const displayPts = list => {
   list.sort((a, b) => a.name.localeCompare(b.name));
 
   $("#sidebar").html("");
@@ -75,7 +75,10 @@ const displaySidebar = list => {
         <div class="sidebar__title">${name}</div>
         <div class="sidebar__pos">${String.fromCharCode("a".charCodeAt(0) + x)} - ${y + 1}</div>
       </div>
-    `)
+    `);
+
+    $(`td[data-coords="${x},${y}"]`).text(cleanName(name));
+    $(`td[data-coords="${x},${y}"]`).prop("title", name);
   }
 }
 
@@ -104,7 +107,7 @@ const score = (idx, names, debug) => {
 
       return curr === 0? -100: curr;
     })
-    .reduce((a, b) => a + b, 0) + Math.random() - 0.5;
+    .reduce((a, b) => a + b, 0);
 }
 
 const relabel = () => {
@@ -113,7 +116,6 @@ const relabel = () => {
 
   let tot = 0;
 
-  //const valid = [0, 5, 6, 10, 11, 15, 16, 20, 21, 25, 26, 31];
   const valid = [0, 6, 11, 16, 21, 26, 31];
 
   const permMap = {};
@@ -155,8 +157,11 @@ const relabel = () => {
     let best = -100000;
     const applyPerm = idx => {
       const delta = score(idx.map(i => opts[i]), curr);
-      if(opts.length >= 15 && delta < 4) return;
-      if(cnt++ > 20) return;
+
+      if(opts.length > 16 && delta < 4) return;
+      if(delta < 0) return;
+      
+      if(cnt++ > 10) return;
 
       for(const i of idx) mask[opts[i]] = false;
 
@@ -164,6 +169,8 @@ const relabel = () => {
       if(best < nxt) {
         best = nxt;
         mapBack[maskH] = hash(mask);
+
+        if(opts.length == 31) console.log(best);
       }
       
       for(const i of idx) mask[opts[i]] = true;
@@ -186,7 +193,7 @@ const relabel = () => {
   }
   
   const mask = names.map(_ => true);
-  console.log(dp(mask));
+  dp(mask);
 
   const maps = [];
   let currH = hash(mask);
@@ -196,14 +203,77 @@ const relabel = () => {
   }
   maps.push(currH.split(",").map(a => a === "true"));
 
+  const tables = [];
   for(let i = 0; i < 6; i++) {
     const currSet = [];
     for(let j = 0; j < maps[i].length; j++) {
       if(maps[i][j] && !maps[i+1][j]) currSet.push(j);
     }
-    console.log(currSet.map(i => curr[i]));
     console.log(score(currSet, curr));
+
+    const seating = currSet.map(i => curr[i]); 
+    const seatScore = seating => {
+      let ret = 0;
+
+      const testPair = (a, b) => {
+        a = seating[a];
+        b = seating[b];
+        if(prefMap[a].includes(b) && prefMap[b].includes(a)) ret++;
+      }
+
+      testPair(0, 1);
+      testPair(2, 3);
+
+      if(seating.length === 6) testPair(5, 6);
+
+      return ret;
+    }
+    
+    let cnt = 0;
+    let bestSeating = seating.concat();
+    while(cnt++ < 500) {
+      shuffle(seating);
+    
+      if(seatScore(seating) > seatScore(bestSeating)) bestSeating = seating.concat();
+      if(seatScore(bestSeating) === 3) break;
+    }
+    tables.push(bestSeating);
   }
+
+  console.log(tables.concat());
+
+  const genPts = (x, y, vert=true) => {
+    const ret = [];
+    if(vert) {
+      ret.push({x: x, y: y}); 
+      ret.push({x: x, y: y + 1}); 
+      ret.push({x: x + 1, y: y}); 
+      ret.push({x: x + 1, y: y + 1}); 
+      ret.push({x: x, y: y + 2}); 
+      ret.push({x: x + 1, y: y + 2}); 
+    } else {
+      ret.push({x: x, y: y}); 
+      ret.push({x: x + 1, y: y}); 
+      ret.push({x: x, y: y + 1}); 
+      ret.push({x: x + 1, y: y + 1}); 
+      ret.push({x: x + 2, y: y}); 
+      ret.push({x: x + 2, y: y + 1}); 
+    }
+    return ret;
+  }
+
+  const list = [];
+  shuffle(tables);
+  const base = [{x: 0, y: 0}, {x: 4, y: 0}, {x: 8, y: 1}, {x: 0, y: 5}, {x: 4, y: 5}, {x: 8, y: 5}];
+  for(const {x, y} of base) {
+    const currTable = tables.pop();
+    const pts = genPts(x, y, x !== 8);
+
+    for(let i = 0; i < currTable.length; i++) {
+      list.push({name: currTable[i], x: pts[i].x, y: pts[i].y});
+    }
+  }
+  displayPts(list)
 }
 
 relabel();

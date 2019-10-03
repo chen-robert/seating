@@ -242,7 +242,7 @@ const relabel = () => {
 
   console.log(tables.concat());
 
-  const genPts = (x, y, vert=true) => {
+  const genPts = (x, y, vert=true, flip=false) => {
     const ret = [];
     if(vert) {
       ret.push({x: x, y: y}); 
@@ -251,6 +251,11 @@ const relabel = () => {
       ret.push({x: x + 1, y: y + 1}); 
       ret.push({x: x, y: y + 2}); 
       ret.push({x: x + 1, y: y + 2}); 
+
+      if(flip) {
+        for(let i = 0; i < 4; i++) ret[i].y++;
+        for(let i = 4; i < 6; i++) ret[i].y -= 2;
+      }
     } else {
       ret.push({x: x, y: y}); 
       ret.push({x: x + 1, y: y}); 
@@ -259,6 +264,9 @@ const relabel = () => {
       ret.push({x: x + 2, y: y}); 
       ret.push({x: x + 2, y: y + 1}); 
     }
+
+    if(Math.random() < 0.5) ret.push(ret.splice(4, 1));
+
     return ret;
   }
 
@@ -267,7 +275,7 @@ const relabel = () => {
   const base = [{x: 0, y: 0}, {x: 4, y: 0}, {x: 8, y: 1}, {x: 0, y: 5}, {x: 4, y: 5}, {x: 8, y: 5}];
   for(const {x, y} of base) {
     const currTable = tables.pop();
-    const pts = genPts(x, y, x !== 8);
+    const pts = genPts(x, y, x !== 8, y !== 0);
 
     for(let i = 0; i < currTable.length; i++) {
       list.push({name: currTable[i], x: pts[i].x, y: pts[i].y});

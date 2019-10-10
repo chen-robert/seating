@@ -1,0 +1,43 @@
+.navbar{
+  width: 100%;
+  box-shadow: 0 1px 10px -3px;
+  margin-bottom: 10px;
+
+  background-color: #eee;
+  display: flex;
+}
+
+a {
+  text-decoration: inherit;
+  color: #111;
+}
+
+.navbar--link{
+  padding: 10px 50px;
+  text-decoration: none;
+  font-size: 1.3rem;
+  color: #444;
+  
+  position: relative;
+  z-index: 1000;
+  
+  &:before{
+    z-index: -1;
+    content: "";
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background-color: darken(#eee, 5%);
+    
+    height: 100%;
+    width: 0;
+    transition: all 100ms;
+  }
+  
+  &:hover:before {
+    width: 100%;
+    left: 0;
+    transition: width 100ms;
+  }
+}
+

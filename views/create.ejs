@@ -1,0 +1,25 @@
+<html>
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.10/js/select2.min.js"></script>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.10/css/select2.min.css" rel="stylesheet" />
+    <link href="/styles/pref.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <form class="form" method="POST">
+      <label for="name">Teacher Name</label>
+      <input name="teacher">
+      <label for="period">Period Number</label>
+      <input name="period" type="number" min="0" value="1">
+      <label for="names">One name on each line</label>
+      <textarea name="names" placeholder="Names" rows="20" cols="50"></textarea>
+      <br>
+      <label for="names">One number on each line</label>
+      <textarea name="tables" placeholder="Tables" rows="5" cols="50"></textarea>
+      <br>
+      <input type="submit" class="btn" value="Create">
+    </form>
+  </body>
+</html>

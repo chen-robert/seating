@@ -1,0 +1,209 @@
+<html>
+<head>
+  <title><%= title %></title>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="stylesheet" href="/styles/navbar.css">
+  <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+
+  <link href="../../ext/loading-bar.css" rel="stylesheet">
+  <script src="../../ext/loading-bar.js"></script>
+</head>
+<body>
+  <div class="navbar">
+    <div class="navbar--link">
+      <a href="https://github.com/chen-robert/seating">Code</a>
+    </div>
+    <div class="navbar--link">
+      <a href="https://blog.robertchen.cc/2019/10/02/seating-charts/">Methodology</a>
+    </div>
+  </div>
+  <div class="main">
+      <button class="btn" onclick="btnClick()">Build</button>
+      <button class="btn btn--small" onclick="reset()">Reset</button>
+    <div id="loading" class="ldBar" data-preset="circle" style="margin: 0 auto;"></div>
+    <div id="results"></div>
+  </div>
+</body>
+<script src="../../scripts/util.js"></script>
+<script>
+const names = <%- JSON.stringify(names) %>;
+const tables = <%- JSON.stringify(tables) %>;
+const prefMap = <%- JSON.stringify(prefMap) %>;
+
+const score = (idx, names, debug) => {
+  const group = idx.map(i => names[i]);
+  return group
+    .map(name => {
+      let curr = prefMap[name]
+        .map(name => group.includes(name) ? 1: 0)
+        .reduce((a, b) => a + b, 0);
+
+      if(prefMap[name].length === 0) curr = 1;
+      else curr /= prefMap[name].length;
+
+      if(curr === 0 && debug) console.log(name);
+
+      return curr === 0? -100: curr;
+    })
+    .reduce((a, b) => a + b, 0);
+}
+
+const bar = new ldBar("#loading");
+const btnClick = () => {
+  bar.set(10);
+
+  setTimeout(relabel, 100);
+}
+
+const reset = () => {
+  window.location = window.location.href + "/reset"
+}
+
+const relabel = () => {
+  Math.seedrandom("<%= seed %>");
+
+  let curr = names.slice();
+  shuffle(curr);
+
+  let tot = 0;
+
+  const validDrops = unique(tables);
+  const valid = [0];
+
+  tables.sort((a, b) => b - a).forEach(i => valid.push(valid[valid.length - 1] + i));
+
+  const permMap = {};
+  for(const i of valid) {
+    permMap[i] = {};
+
+    for(const len of validDrops) {
+      let tmp = [];
+      permute(new Array(i), len, idx => {
+        tmp.push(idx);
+      });
+      shuffle(tmp)
+      permMap[i][len] = tmp;
+    }
+  }
+
+  const N = names.length;
+  const memo = {};
+  const mapBack = {};
+  const hash = mask => mask.join(",");
+  const dp = (mask, first=false) => {
+    const maskH = hash(mask);
+    if(memo[maskH]) return memo[maskH];
+
+    const opts = [];
+    for(let i = 0; i < N; i++) {
+      if(mask[i]) opts.push(i);
+    }
+    if(opts.length === 0) return 0;
+    
+    let cnt = 0;
+    let best = -100000;
+    const applyPerm = idx => {
+      const delta = score(idx.map(i => opts[i]), curr);
+
+      if(opts.length > 16 && delta < 4) return;
+      if(delta < 0) return;
+      
+      if(cnt++ > 10) return;
+
+      for(const i of idx) mask[opts[i]] = false;
+
+      const nxt = dp(mask) + delta;
+      if(best < nxt) {
+        best = nxt;
+        mapBack[maskH] = hash(mask);
+
+        if(opts.length == 31) console.log(best);
+      }
+      
+      for(const i of idx) mask[opts[i]] = true;
+    }
+
+    let todo = [];
+    for(const len of validDrops) {
+      if(valid.includes(opts.length - len)) {
+        todo = todo.concat(permMap[opts.length][len]);
+      }
+    }
+
+    for(let i = 0; i < todo.length; i++) {
+      applyPerm(todo[i]);
+    }
+
+    memo[maskH] = best;
+    return best;
+  }
+  
+  const mask = names.map(_ => true);
+  dp(mask, true);
+
+  const maps = [];
+  let currH = hash(mask);
+  console.log(currH);
+  console.log(mapBack);
+  for(let i = 0; i < tables.length; i++) {
+    maps.push(currH.split(",").map(a => a === "true"));
+    currH = mapBack[currH];
+  }
+  maps.push(currH.split(",").map(a => a === "true"));
+
+  const finalizedTables = [];
+  for(let i = 0; i < tables.length; i++) {
+    const currSet = [];
+    for(let j = 0; j < maps[i].length; j++) {
+      if(maps[i][j] && !maps[i+1][j]) currSet.push(j);
+    }
+    console.log(score(currSet, curr));
+
+    const seating = currSet.map(i => curr[i]); 
+    const seatScore = seating => {
+      let ret = 0;
+
+      const testPair = (a, b) => {
+        a = seating[a];
+        b = seating[b];
+        if(prefMap[a].includes(b) && prefMap[b].includes(a)) ret++;
+      }
+
+      testPair(0, 1);
+      testPair(2, 3);
+
+      if(seating.length === 6) testPair(5, 6);
+
+      return ret;
+    }
+    
+    let cnt = 0;
+    let bestSeating = seating.concat();
+    while(cnt++ < 500) {
+      shuffle(seating);
+    
+      if(seatScore(seating) > seatScore(bestSeating)) bestSeating = seating.concat();
+      if(seatScore(bestSeating) === 3) break;
+    }
+    finalizedTables.push(bestSeating);
+  }
+
+  console.log(finalizedTables.concat());
+
+  $("#results").html("");
+  finalizedTables.forEach(table => {
+    $("#results").append(`
+      <div class="wrapper">
+        ${table.map(name => `<div class="wrapper--elem">${name}</div>`).join("\n")}  
+      </div>
+    `)
+  });
+
+  
+  bar.set(100);
+}
+</script>
+</body>
+</html>

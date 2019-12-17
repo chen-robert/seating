@@ -17,7 +17,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const autoprefixer = require('express-autoprefixer');
 const lessMiddleware = require('less-middleware');
-const cookieSession = require("cookie-session");
 
 const PORT = process.env.PORT || 3000;
 
@@ -46,7 +45,7 @@ app.get("/class/:name/:period", (req, res) => {
   const {name, period} = req.params;
   const dataPath = path.join(dataDir, name, period) + ".json";
 
-  const {names, layout} = require(dataPath);
+  const {names, layout, tables} = require(dataPath);
   
   const allPrefs = db.get("prefs").value();
   const prefMap = {};
@@ -57,10 +56,11 @@ app.get("/class/:name/:period", (req, res) => {
     prefMap[person] = prefs.towards;
   }
   
-  res.render("index", {
+  res.render("slim", {
     title: `${name} #${period}`,
     names,
     layout,
+    tables,
     prefMap,
     seed: db.get("seeds").get(name + "-" + period).value() 
   });
@@ -108,8 +108,30 @@ app.get("/class/:name/:period/reset", (req, res) => {
     .set(name + "-" + period, seed)
     .write();
 
-  res.send("" + seed);
+  res.redirect(`/class/${name}/${period}`);
 });
-app.use((req, res) => res.redirect("/class/rahlfs/7"));
+
+app.get("/new", (req, res) => res.render("create"));
+app.post("/new", (req, res) => {
+  let {teacher, period, names, tables} = req.body;
+
+  names = names.trim().split("\n");
+  tables = tables.trim().split("\n").map(i => +i).sort();
+
+  const sum = tables.reduce((a, b) => a + b, 0);
+
+  if(sum !== names.length) return res.send(`Invalid tables. Sum was ${sum} while expected ${names.length}`);
+
+  
+  const dataPath = path.join(dataDir, teacher, period) + ".json";
+  const data = {
+    names,
+    tables
+  };
+
+  fs.writeFileSync(dataPath, JSON.stringify(data));
+
+  return res.redirect(`/class/${teacher}/${period}`);
+});
 
 app.listen(PORT, () => console.log(`Started server at port ${PORT}`));

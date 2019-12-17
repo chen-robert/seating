@@ -122,8 +122,10 @@ app.post("/new", (req, res) => {
 
   if(sum !== names.length) return res.send(`Invalid tables. Sum was ${sum} while expected ${names.length}`);
 
-  
-  const dataPath = path.join(dataDir, teacher, period) + ".json";
+  const parentDir = path.join(dataDir, teacher);
+  if(!fs.existsSync(parentDir)) fs.mkdirSync(parentDir);
+
+  const dataPath = path.join(parentDir, period) + ".json";
   const data = {
     names,
     tables
@@ -133,5 +135,7 @@ app.post("/new", (req, res) => {
 
   return res.redirect(`/class/${teacher}/${period}`);
 });
+
+app.get("/", (req, res) => res.redirect("/new"))
 
 app.listen(PORT, () => console.log(`Started server at port ${PORT}`));

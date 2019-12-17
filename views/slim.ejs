@@ -21,7 +21,7 @@
   </div>
   <div class="main">
       <button class="btn" onclick="btnClick()">Build</button>
-      <button class="btn btn--small" onclick="reset()">Reset</button>
+      <button class="btn btn--small" onclick="reset()">Reseed</button>
     <div id="loading" class="ldBar" data-preset="circle" style="margin: 0 auto;"></div>
     <div id="results"></div>
   </div>
@@ -33,6 +33,10 @@ const tables = <%- JSON.stringify(tables) %>;
 const prefMap = <%- JSON.stringify(prefMap) %>;
 
 const score = (idx, names, debug) => {
+  return indivScores(idx, names).reduce((a, b) => a + b, 0);
+}
+
+const indivScores = (idx, names) => {
   const group = idx.map(i => names[i]);
   return group
     .map(name => {
@@ -43,11 +47,8 @@ const score = (idx, names, debug) => {
       if(prefMap[name].length === 0) curr = 1;
       else curr /= prefMap[name].length;
 
-      if(curr === 0 && debug) console.log(name);
-
       return curr === 0? -100: curr;
     })
-    .reduce((a, b) => a + b, 0);
 }
 
 const bar = new ldBar("#loading");
@@ -106,9 +107,6 @@ const relabel = () => {
     let best = -100000;
     const applyPerm = idx => {
       const delta = score(idx.map(i => opts[i]), curr);
-
-      if(opts.length > 16 && delta < 4) return;
-      if(delta < 0) return;
       
       if(cnt++ > 10) return;
 
@@ -118,8 +116,6 @@ const relabel = () => {
       if(best < nxt) {
         best = nxt;
         mapBack[maskH] = hash(mask);
-
-        if(opts.length == 31) console.log(best);
       }
       
       for(const i of idx) mask[opts[i]] = true;
@@ -145,8 +141,6 @@ const relabel = () => {
 
   const maps = [];
   let currH = hash(mask);
-  console.log(currH);
-  console.log(mapBack);
   for(let i = 0; i < tables.length; i++) {
     maps.push(currH.split(",").map(a => a === "true"));
     currH = mapBack[currH];
@@ -159,7 +153,7 @@ const relabel = () => {
     for(let j = 0; j < maps[i].length; j++) {
       if(maps[i][j] && !maps[i+1][j]) currSet.push(j);
     }
-    console.log(score(currSet, curr));
+    console.log(indivScores(currSet, curr));
 
     const seating = currSet.map(i => curr[i]); 
     const seatScore = seating => {
@@ -187,16 +181,20 @@ const relabel = () => {
       if(seatScore(seating) > seatScore(bestSeating)) bestSeating = seating.concat();
       if(seatScore(bestSeating) === 3) break;
     }
-    finalizedTables.push(bestSeating);
+    finalizedTables.push({
+      table: bestSeating,
+      weights: indivScores(currSet, curr)
+    });
   }
 
-  console.log(finalizedTables.concat());
-
   $("#results").html("");
-  finalizedTables.forEach(table => {
+  finalizedTables.forEach(({table, weights}) => {
     $("#results").append(`
       <div class="wrapper">
-        ${table.map(name => `<div class="wrapper--elem">${name}</div>`).join("\n")}  
+        ${table.map((name, i) => {
+          const color = blend("36c95e", "f0573c", weights[i]);
+          return `<div class="wrapper--elem" style="background-color: #${color}">${name}</div>`
+        }).join("\n")}  
       </div>
     `)
   });

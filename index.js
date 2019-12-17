@@ -115,7 +115,7 @@ app.get("/new", (req, res) => res.render("create"));
 app.post("/new", (req, res) => {
   let {teacher, period, names, tables} = req.body;
 
-  names = names.trim().split("\n");
+  names = names.trim().split("\n").map(name => name.trim());
   tables = tables.trim().split("\n").map(i => +i).sort();
 
   const sum = tables.reduce((a, b) => a + b, 0);

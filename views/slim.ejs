@@ -27,7 +27,7 @@
     <div class="slidecontainer">
       <label for="workFactor">Work Factor</label><br>
       <div class="wrapper">
-        Faster <input type="range" min="1" max="10" value="4" class="slider" id="workFactor"> Better
+        Faster <input type="range" min="1" max="25" value="4" class="slider" id="workFactor"> Better
       </div>
     </div>
     <div id="loading" class="ldBar" data-preset="circle" style="margin: 0 auto;"></div>
@@ -44,8 +44,9 @@ const score = (idx, names, debug) => {
   return indivScores(idx, names).reduce((a, b) => a + b, 0);
 }
 
-const indivScores = (idx, names) => {
+const indivScores = (idx, names, debug) => {
   const group = idx.map(i => names[i]);
+  if(debug) console.log(group)
   return group
     .map(name => {
       let curr = prefMap[name]
@@ -161,36 +162,11 @@ const relabel = () => {
     for(let j = 0; j < maps[i].length; j++) {
       if(maps[i][j] && !maps[i+1][j]) currSet.push(j);
     }
-    console.log(indivScores(currSet, curr));
+    console.log(indivScores(currSet, curr, true));
 
     const seating = currSet.map(i => curr[i]); 
-    const seatScore = seating => {
-      let ret = 0;
-
-      const testPair = (a, b) => {
-        a = seating[a];
-        b = seating[b];
-        if(prefMap[a].includes(b) && prefMap[b].includes(a)) ret++;
-      }
-
-      testPair(0, 1);
-      testPair(2, 3);
-
-      if(seating.length === 6) testPair(5, 6);
-
-      return ret;
-    }
-    
-    let cnt = 0;
-    let bestSeating = seating.concat();
-    while(cnt++ < 500) {
-      shuffle(seating);
-    
-      if(seatScore(seating) > seatScore(bestSeating)) bestSeating = seating.concat();
-      if(seatScore(bestSeating) === 3) break;
-    }
     finalizedTables.push({
-      table: bestSeating,
+      table: seating,
       weights: indivScores(currSet, curr)
     });
   }

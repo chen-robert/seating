@@ -20,8 +20,15 @@
     </div>
   </div>
   <div class="main">
-      <button class="btn" onclick="btnClick()">Build</button>
-      <button class="btn btn--small" onclick="reset()">Reseed</button>
+    <button class="btn" onclick="btnClick()">Build</button>
+    <button class="btn btn--small" onclick="reset()">Reseed</button>
+    <br>
+    <div class="slidecontainer">
+      <label for="workFactor">Work Factor</label><br>
+      <div class="wrapper">
+        Faster <input type="range" min="1" max="10" value="4" class="slider" id="workFactor"> Better
+      </div>
+    </div>
     <div id="loading" class="ldBar" data-preset="circle" style="margin: 0 auto;"></div>
     <div id="results"></div>
   </div>
@@ -55,7 +62,7 @@ const bar = new ldBar("#loading");
 const btnClick = () => {
   bar.set(10);
 
-  setTimeout(relabel, 100);
+  setTimeout(relabel, 1000);
 }
 
 const reset = () => {
@@ -108,7 +115,7 @@ const relabel = () => {
     const applyPerm = idx => {
       const delta = score(idx.map(i => opts[i]), curr);
       
-      if(cnt++ > 10) return;
+      if(cnt++ > +$("#workFactor").val()) return;
 
       for(const i of idx) mask[opts[i]] = false;
 

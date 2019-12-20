@@ -42,6 +42,8 @@ app.use("/class/:name/:period", (req, res, next) => {
 });
 
 app.get("/class/:name/:period", (req, res) => {
+  if(req.url.endsWith("/")) return res.redirect(req.url.slice(0, -1));
+
   const {name, period} = req.params;
   const dataPath = path.join(dataDir, name, period) + ".json";
 

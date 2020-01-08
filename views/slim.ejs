@@ -98,6 +98,7 @@ const relabel = () => {
     }
   }
 
+  let forcePos = true;
   const N = names.length;
   const memo = {};
   const mapBack = {};
@@ -117,6 +118,7 @@ const relabel = () => {
     const applyPerm = idx => {
       const delta = score(idx.map(i => opts[i]), curr);
       
+      if(forcePos && delta < 0) return;
       if(cnt++ > +$("#workFactor").val()) return;
 
       for(const i of idx) mask[opts[i]] = false;
@@ -146,6 +148,9 @@ const relabel = () => {
   }
   
   const mask = names.map(_ => true);
+  dp(mask, true);
+
+  forcePos = false;
   dp(mask, true);
 
   const maps = [];
